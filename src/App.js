@@ -1,83 +1,85 @@
-import { useState, useEffect } from 'react'
+import { Component } from 'react'
+
 let value = null;
 
-  function App() {
+class App extends Component {
+ emptyBlocks = { block1: '', block2: '', block3: '', block4: '', block5: '', block6: '', block7: '', block8: '', block9: '' }
+ state = {
+ zeroOrCross: true,
+ blocks: this.emptyBlocks
+  };
 
-  const emptyBlocks = { block1: '', block2: '', block3: '', block4: '', block5: '', block6: '', block7: '', block8: '', block9: '' }
-  const [zeroOrCross, setZeroOrCross] = useState(true);
-  const [blocks, setBlocks] = useState(emptyBlocks);
-
-  const handleClick = (e) => {
-    value = zeroOrCross && 'O' || 'X';
-    e.target.innerHTML==='' && setBlocks({ ...blocks, [e.target.classList[1]]: value });
-    e.target.innerHTML==='' && setZeroOrCross(!zeroOrCross);
-  }
-
-  function hasNullBlocks(target) {
-    for (var member in target) {
-        if (target[member] === '')
-            return true;
-    }
-    return false;
+handleClick = (e) => {
+value = this.state.zeroOrCross && 'O' || 'X';
+e.target.innerHTML === '' && this.setState({ zeroOrCross: !this.state.zeroOrCross, blocks: { ...this.state.blocks, [e.target.classList[1]]: value } });
 }
 
-  const checkForWin = () => {
+hasNullBlocks(target) {
+for (var member in target) {
+if (target[member] === '')
+return true;
+}
+return false;
+}
 
-      const lines = [
-      [0, 1, 2],
-      [3, 4, 5],
-      [6, 7, 8],
-      [0, 3, 6],
-      [1, 4, 7],
-      [2, 5, 8],
-      [0, 4, 8],
-      [2, 4, 6]
-    ];
-  for (let i = 0; i < lines.length; i++) {
-  const [a, b, c] = lines[i];
-  if (blocks[`block${a+1}`] === value && blocks[`block${b+1}`] === value && blocks[`block${c+1}`] === value) {
-  window.prompt(value + " "  +  'wins');
-  resetBlocks();
+checkForWin = () => {
+
+  const winningConditions = [
+  [0, 1, 2],
+  [3, 4, 5],
+  [6, 7, 8],
+  [0, 3, 6],
+  [1, 4, 7],
+  [2, 5, 8],
+  [0, 4, 8],
+  [2, 4, 6]
+  ];
+  for (let i = 0; i < winningConditions.length; i++) {
+  const [a, b, c] = winningConditions[i];
+  if (this.state.blocks[`block${a + 1}`] === value && this.state.blocks[`block${b + 1}`] === value && this.state.blocks[`block${c + 1}`] === value) {
+  window.prompt(value + " " + 'wins');
+  this.resetBlocks();
   return;
   }}
-  if(!hasNullBlocks(blocks)) 
-  {
-    resetBlocks();
-    window.prompt('Tie'); 
-  } 
-} 
-   const resetBlocks=()=>{
-    setBlocks(emptyBlocks);
+  if (!this.hasNullBlocks(this.state.blocks)) {
+  this.resetBlocks();
+  window.prompt('Tie');
+  }}
+  resetBlocks = () => {
+  this.setState({ ...this.state, blocks: this.emptyBlocks });
   }
-   useEffect(() => {
-   setTimeout(()=>checkForWin(),1) 
-   }, [blocks]);
-   
-   return (
-    <>
-            <div className='container'>
-            <div className='child-container'>
-              <h1 className='heading'>Tic Tac Toe</h1>
+  componentDidUpdate(prevProps, prevState) {
+  if (this.state.blocks !== prevState.blocks)
+  setTimeout(() => this.checkForWin(), 1)
+  }
+
+  render() {
+  return (
+      <>
+        <div className='container'>
+          <div className='child-container'>
+            <h1 className='heading'>Tic Tac Toe</h1>
             <div className='row'>
-            <span className='block block1' onClick={handleClick}>{blocks.block1}</span>
-            <span className='block block2' onClick={handleClick}>{blocks.block2}</span>
-            <span className='block block3' onClick={handleClick}>{blocks.block3}</span>
-            </div>
-            <div className='row'>
-            <span className='block block4' onClick={handleClick}>{blocks.block4}</span>
-            <span className='block block5' onClick={handleClick}>{blocks.block5}</span>
-            <span className='block block6' onClick={handleClick}>{blocks.block6}</span>
+              <span className='block block1' onClick={this.handleClick}>{this.state.blocks.block1}</span>
+              <span className='block block2' onClick={this.handleClick}>{this.state.blocks.block2}</span>
+              <span className='block block3' onClick={this.handleClick}>{this.state.blocks.block3}</span>
             </div>
             <div className='row'>
-            <span className='block block7' onClick={handleClick}>{blocks.block7}</span>
-            <span className='block block8' onClick={handleClick}>{blocks.block8}</span>
-            <span className='block block9' onClick={handleClick}>{blocks.block9}</span>
+              <span className='block block4' onClick={this.handleClick}>{this.state.blocks.block4}</span>
+              <span className='block block5' onClick={this.handleClick}>{this.state.blocks.block5}</span>
+              <span className='block block6' onClick={this.handleClick}>{this.state.blocks.block6}</span>
             </div>
+            <div className='row'>
+              <span className='block block7' onClick={this.handleClick}>{this.state.blocks.block7}</span>
+              <span className='block block8' onClick={this.handleClick}>{this.state.blocks.block8}</span>
+              <span className='block block9' onClick={this.handleClick}>{this.state.blocks.block9}</span>
             </div>
-            <button className='resetbutton btn btn-primary' onClick={resetBlocks}>Reset</button>
-            </div>
-            </>
-            );
-            }
+          </div>
+          <button className='resetbutton btn btn-primary' onClick={this.resetBlocks}>Reset</button>
+        </div>
+      </>
+    );
+  }
+}
 
 export default App;
