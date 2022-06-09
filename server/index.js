@@ -18,6 +18,9 @@ io.on("connection", (socket) => {
     });
     socket.on('nextturn', () => {
         socket.broadcast.emit('setturn')
+    });
+    socket.on('resetState',() => {
+     socket.broadcast.emit('onReset');
     })
 });
 httpServer.listen(5000);
