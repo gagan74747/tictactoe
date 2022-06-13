@@ -1,104 +1,203 @@
-import { Component, } from 'react'
-import { io } from "socket.io-client";
+import { Component } from "react";
+import React from "react";
+import socket from "../socket";
+import Modal from "react-modal";
+import { Link } from "react-router-dom";
 
+const customStyles = {
+  content: {
+    top: "20%",
+    left: "49%",
+    right: "auto",
+    bottom: "auto",
+    marginRight: "-50%",
+    transform: "translate(-50%, -50%)",
+  },
+};
+Modal.setAppElement("#root");
 let value = null;
-let turn =true;
+let turn = true;
+let subtitle;
 
 class Game extends Component {
+  openModal = () => {
+    this.setState({ ...this.state, modalIsOpen: true });
+  };
 
-componentDidMount(){
-this.socket = io("http://localhost:5000");
-this.socket.on("connect", () => {
-this.socket.on('message', (ar) => { this.setState(ar);value = ar.value})
-this.socket.on('setturn', () => { turn=true})
-this.socket.on('onReset',() => {
-this.setState({ zeroOrCross:true, blocks: this.emptyBlocks });
-turn=true;
-})})}
+  afterOpenModal = () => {
+    // references are now sync'd and can be accessed.
+    subtitle.style.color = "#f00";
+  };
 
-emptyBlocks = { block1: '', block2: '', block3: '', block4: '', block5: '', block6: '', block7: '', block8: '', block9: '' }
-state = {
-zeroOrCross: true,
-blocks: this.emptyBlocks,
-};
+  closeModal = () => {
+    this.setState({ ...this.state, modalIsOpen: false });
+  };
 
-handleClick = (e) => {
-if(turn && e.target.innerHTML === '')
-{
-value = this.state.zeroOrCross && 'O' || 'X';
-this.setState({ zeroOrCross: !this.state.zeroOrCross, blocks: { ...this.state.blocks, [e.target.classList[1]]: value } });
-e.target.innerHTML === '' && this.socket.emit("hello", { zeroOrCross: !this.state.zeroOrCross, blocks: { ...this.state.blocks, [e.target.classList[1]]: value },value });
-turn=false;
-this.socket.emit('nextturn')
-}}
+  componentDidMount() {
+    socket.on("connect", () => {
+      socket.on("message", (ar) => {
+        this.setState(ar);
+        value = ar.value;
+      });
+      socket.on("setturn", () => {
+        turn = true;
+      });
+      socket.on("onReset", () => {
+        this.setState({ zeroOrCross: true, blocks: this.emptyBlocks });
+        turn = true;
+      });
+    });
+  }
 
-hasNullBlocks(target) {
-for (var member in target) {
-if (target[member] === '')
-return true;
+  emptyBlocks = {
+    block1: "",
+    block2: "",
+    block3: "",
+    block4: "",
+    block5: "",
+    block6: "",
+    block7: "",
+    block8: "",
+    block9: "",
+  };
+  state = {
+    zeroOrCross: true,
+    blocks: this.emptyBlocks,
+    modalIsOpen: false,
+  };
+
+  handleClick = (e) => {
+    if (turn && e.target.innerHTML === "") {
+      value = (this.state.zeroOrCross && "O") || "X";
+      this.setState({
+        zeroOrCross: !this.state.zeroOrCross,
+        blocks: { ...this.state.blocks, [e.target.classList[1]]: value },
+      });
+      e.target.innerHTML === "" &&
+        socket.emit("hello", {
+          zeroOrCross: !this.state.zeroOrCross,
+          blocks: { ...this.state.blocks, [e.target.classList[1]]: value },
+          value,
+        });
+      turn = false;
+      socket.emit("nextturn");
+    }
+  };
+
+  hasNullBlocks(target) {
+    for (var member in target) {
+      if (target[member] === "") return true;
+    }
+    return false;
+  }
+
+  checkForWin = () => {
+    console.log("from check for win");
+    const winningConditions = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6],
+    ];
+    for (let i = 0; i < winningConditions.length; i++) {
+      const [a, b, c] = winningConditions[i];
+      if (
+        this.state.blocks[`block${a + 1}`] === value &&
+        this.state.blocks[`block${b + 1}`] === value &&
+        this.state.blocks[`block${c + 1}`] === value
+      ) {
+        // window.prompt(value + " " + 'wins');
+        this.openModal();
+        // this.resetBlocks();
+        return;
+      }
+    }
+    if (!this.hasNullBlocks(this.state.blocks)) {
+      value = false;
+      this.openModal();
+      // this.resetBlocks();
+      // window.prompt('Tie');
+    }
+  };
+
+  resetBlocks = () => {
+    this.setState({ zeroOrCross: true, blocks: this.emptyBlocks });
+    turn = true;
+    // socket.emit('resetState');
+  };
+
+  componentDidUpdate(prevProps, prevState) {
+    if (this.state.blocks !== prevState.blocks) {
+      setTimeout(() => this.checkForWin(), 1);
+    }
+  }
+
+  render() {
+    return (
+      <>
+        <Modal
+          isOpen={this.state.modalIsOpen}
+          onAfterOpen={this.afterOpenModal}
+          onRequestClose={this.closeModal}
+          style={customStyles}
+          contentLabel="Example Modal"
+          shouldCloseOnOverlayClick={false}
+        >
+          <h5 style={{ textAlign: "center" }}>RESULT..!!</h5>
+          {(value && <p style={{ textAlign: "center" }}>{value} Wins</p>) || (
+            <p style={{ textAlign: "center" }}>Tie</p>
+          )}
+          <Link to="/">
+            <h6>
+              Start New Game <i class="fa fa-refresh" aria-hidden="true"></i>
+            </h6>
+          </Link>
+        </Modal>
+        <h1 className="heading">Tic Tac Toe</h1>
+        <div className="container">
+          <div className="child-container">
+            <div className="row">
+              <span className="block block1" onClick={this.handleClick}>
+                {this.state.blocks.block1}
+              </span>
+              <span className="block block2" onClick={this.handleClick}>
+                {this.state.blocks.block2}
+              </span>
+              <span className="block block3" onClick={this.handleClick}>
+                {this.state.blocks.block3}
+              </span>
+            </div>
+            <div className="row">
+              <span className="block block4" onClick={this.handleClick}>
+                {this.state.blocks.block4}
+              </span>
+              <span className="block block5" onClick={this.handleClick}>
+                {this.state.blocks.block5}
+              </span>
+              <span className="block block6" onClick={this.handleClick}>
+                {this.state.blocks.block6}
+              </span>
+            </div>
+            <div className="row">
+              <span className="block block7" onClick={this.handleClick}>
+                {this.state.blocks.block7}
+              </span>
+              <span className="block block8" onClick={this.handleClick}>
+                {this.state.blocks.block8}
+              </span>
+              <span className="block block9" onClick={this.handleClick}>
+                {this.state.blocks.block9}
+              </span>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
 }
-return false;
-}
-
-checkForWin = () => {
-console.log('from check for win');
-const winningConditions = [
-[0, 1, 2],
-[3, 4, 5],
-[6, 7, 8],
-[0, 3, 6],
-[1, 4, 7],
-[2, 5, 8],
-[0, 4, 8],
-[2, 4, 6]
-];
-for (let i = 0; i < winningConditions.length; i++) {
-const [a, b, c] = winningConditions[i];
-if (this.state.blocks[`block${a + 1}`] === value && this.state.blocks[`block${b + 1}`] === value && this.state.blocks[`block${c + 1}`] === value) {
-window.prompt(value + " " + 'wins');
-this.resetBlocks();
-return;
-}}
-if (!this.hasNullBlocks(this.state.blocks)) {
-this.resetBlocks();
-window.prompt('Tie');
-}}
-
-resetBlocks = () => {
-this.setState({ zeroOrCross:true, blocks: this.emptyBlocks });
-turn=true;
-this.socket.emit('resetState');
-}
-
-componentDidUpdate(prevProps, prevState) {
-if (this.state.blocks !== prevState.blocks) {
-setTimeout(() => this.checkForWin(), 1)
-}}
-
-render() {
-return (
-<>
-<div className='container'>
-<div className='child-container'>
-<h1 className='heading'>Tic Tac Toe</h1>
-<div className='row'>
-<span className='block block1' onClick={this.handleClick}>{this.state.blocks.block1}</span>
-<span className='block block2' onClick={this.handleClick}>{this.state.blocks.block2}</span>
-<span className='block block3' onClick={this.handleClick}>{this.state.blocks.block3}</span>
-</div>
-<div className='row'>
-<span className='block block4' onClick={this.handleClick}>{this.state.blocks.block4}</span>
-<span className='block block5' onClick={this.handleClick}>{this.state.blocks.block5}</span>
-<span className='block block6' onClick={this.handleClick}>{this.state.blocks.block6}</span>
-</div>
-<div className='row'>
-<span className='block block7' onClick={this.handleClick}>{this.state.blocks.block7}</span>
-<span className='block block8' onClick={this.handleClick}>{this.state.blocks.block8}</span>
-<span className='block block9' onClick={this.handleClick}>{this.state.blocks.block9}</span>
-</div>
-</div>
-</div>
-</>
-)}}
 
 export default Game;
