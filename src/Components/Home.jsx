@@ -1,6 +1,7 @@
 import React, { Component } from "react";
-import socket from "../socket";
+import socket, { socketEvents } from "../socket";
 import { Navigate } from "react-router-dom";
+
 export default class Home extends Component {
   state = {
     genratedRoomId: "12345",
@@ -17,22 +18,21 @@ export default class Home extends Component {
   };
   joinRoom = (e, roomId) => {
     e.preventDefault();
-    roomId && socket.emit("joinRoom", roomId);
+    roomId && socketEvents.joinRoom(roomId);
     this.setState({ ...this.state, redirect: true });
   };
 
   render() {
     return (
       <>
-        {this.state.redirect && <Navigate to="/game" replace={true} />}
+        { this.state.redirect && <Navigate to="/game" replace={true} /> }
         <div className="d-flex flex-column justify-content-center align-items-center container ">
           <form className="d-flex flex-column justify-content-center align-items-center form p-5 ">
             <div className="form-outline  ">
-              <h1 className="text-center  mb-4">Enter Room Id</h1>
+            <h1 className="text-center  mb-4">Enter Room Id</h1>
             </div>
-
             <div className="form-outline mt-2 mb-4 w-25">
-              <input
+            <input
                 type="text"
                 id="form1Example2"
                 className="form-control"
