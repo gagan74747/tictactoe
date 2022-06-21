@@ -1,9 +1,8 @@
 import { Component } from "react";
 import React from "react";
-import socket from "../socket";
 import Modal from "react-modal";
 import { Link } from "react-router-dom";
-
+import { socket } from "../App";
 const customStyles = {
   content: {
     top: "20%",
@@ -25,27 +24,25 @@ class Game extends Component {
   };
 
   afterOpenModal = () => {
-    // references are now sync'd and can be accessed.
     subtitle.style.color = "#f00";
   };
 
   closeModal = () => {
     this.setState({ ...this.state, modalIsOpen: false });
   };
-
+  setStartGame = () => {
+    this.setState({ ...this.state, startGameModal: false });
+  };
   componentDidMount() {
-    socket.on("connect", () => {
-      socket.on("message", (ar) => {
-        this.setState(ar);
-        value = ar.value;
-      });
-      socket.on("setturn", () => {
-        turn = true;
-      });
-      socket.on("onReset", () => {
-        this.setState({ zeroOrCross: true, blocks: this.emptyBlocks });
-        turn = true;
-      });
+    socket.on("message", (ar) => {
+      this.setState(ar);
+      value = ar.value;
+    });
+    socket.on("setturn", () => {
+      turn = true;
+    });
+    socket.on("startGame", () => {
+      this.setStartGame();
     });
   }
 
@@ -64,6 +61,7 @@ class Game extends Component {
     zeroOrCross: true,
     blocks: this.emptyBlocks,
     modalIsOpen: false,
+    startGameModal: true,
   };
 
   handleClick = (e) => {
@@ -74,7 +72,7 @@ class Game extends Component {
         blocks: { ...this.state.blocks, [e.target.classList[1]]: value },
       });
       e.target.innerHTML === "" &&
-        socket.emit("hello", {
+        socket.emit("opponentTurnPayload", {
           zeroOrCross: !this.state.zeroOrCross,
           blocks: { ...this.state.blocks, [e.target.classList[1]]: value },
           value,
@@ -92,7 +90,6 @@ class Game extends Component {
   }
 
   checkForWin = () => {
-    console.log("from check for win");
     const winningConditions = [
       [0, 1, 2],
       [3, 4, 5],
@@ -110,26 +107,17 @@ class Game extends Component {
         this.state.blocks[`block${b + 1}`] === value &&
         this.state.blocks[`block${c + 1}`] === value
       ) {
-        // window.prompt(value + " " + 'wins');
         this.openModal();
-        // this.resetBlocks();
+        turn = true;
         return;
       }
     }
     if (!this.hasNullBlocks(this.state.blocks)) {
       value = false;
       this.openModal();
-      // this.resetBlocks();
-      // window.prompt('Tie');
+      turn = true;
     }
   };
-
-  resetBlocks = () => {
-    this.setState({ zeroOrCross: true, blocks: this.emptyBlocks });
-    turn = true;
-    // socket.emit('resetState');
-  };
-
   componentDidUpdate(prevProps, prevState) {
     if (this.state.blocks !== prevState.blocks) {
       setTimeout(() => this.checkForWin(), 1);
@@ -141,7 +129,7 @@ class Game extends Component {
       <>
         <Modal
           isOpen={this.state.modalIsOpen}
-          onAfterOpen={this.afterOpenModal}
+          // onAfterOpen={this.afterOpenModal}
           onRequestClose={this.closeModal}
           style={customStyles}
           contentLabel="Example Modal"
@@ -151,11 +139,22 @@ class Game extends Component {
           {(value && <p style={{ textAlign: "center" }}>{value} Wins</p>) || (
             <p style={{ textAlign: "center" }}>Tie</p>
           )}
-          <Link to="/">
+          <Link to="/" onClick={() => socket.emit("leaveRoom")}>
             <h6>
-              Start New Game <i class="fa fa-refresh" aria-hidden="true"></i>
+              Start New Game{" "}
+              <i className="fa fa-refresh" aria-hidden="true"></i>
             </h6>
           </Link>
+        </Modal>
+        <Modal
+          isOpen={this.state.startGameModal}
+          // onAfterOpen={this.afterOpenModal}
+          onRequestClose={this.setStartGame}
+          style={customStyles}
+          contentLabel="Example Modal"
+          shouldCloseOnOverlayClick={false}
+        >
+          <h5>Waiting for another player to join..</h5>
         </Modal>
         <h1 className="heading">Tic Tac Toe</h1>
         <div className="container">

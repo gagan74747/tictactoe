@@ -15,22 +15,32 @@ const io = new Server(5000, {
 instrument(io, {
     auth: false
 });
-let room;
+
 io.on("connection", (socket) => {
     console.log(socket.id)
     socket.on('joinRoom', (roomId) => {
-        room = roomId.toString();
-        console.log(room)
-        socket.join(room)
-        socket.on("hello", (arg) => {
-            console.log('fire', room)
-            socket.to('a').emit('message', arg);
-            // socket.broadcast.emit('message', arg);
+        console.log('joinRoom', roomId);
+        const room = roomId.toString();
+
+        if (io.sockets.adapter.rooms.get(room) && io.sockets.adapter.rooms.get(room).size === 2) {
+            socket.emit('roomFull');
+        }
+        else {
+            socket.emit('roomAvailable');
+            socket.join(room);
+            (io.sockets.adapter.rooms.get(room).size === 2) && setTimeout(() => {
+                io.in(room).emit('startGame');
+            }, 10)
+        }
+        socket.on('leaveRoom', () => {
+            socket.leave(room)
+        })
+
+        socket.on('opponentTurnPayload', (arg) => {
+            socket.to(room).emit('message', arg);
         });
         socket.on('nextturn', () => {
-            console.log('fire1', room)
-            socket.to('a').emit('setturn')
-            // socket.broadcast.emit('setturn')
+            socket.to(room).emit('setturn')
         })
     });
 });
