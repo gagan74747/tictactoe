@@ -9,7 +9,7 @@ export const socketEvents={
     opponentTurn:(payload)=>{
         socket.emit('opponentTurnPayload',payload);
     },
-    nextTurn:()=>{
+    nextTurn:()=>{""
         socket.emit("nextturn");
     }}
    socket.on("message",(ar)=>{
