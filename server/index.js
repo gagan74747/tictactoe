@@ -15,22 +15,20 @@ const io = new Server(5000, {
 instrument(io, {
     auth: false
 });
-let room;
+
 io.on("connection", (socket) => {
-    console.log(socket.id)
-    socket.on('joinRoom', (roomId) => {
-        room = roomId.toString();
-        console.log(room)
-        socket.join(room)
-        socket.on("hello", (arg) => {
-            console.log('fire', room)
-            socket.to('a').emit('message', arg);
-            // socket.broadcast.emit('message', arg);
+            console.log(socket.id)
+            socket.on('joinRoom', (roomId) => {
+            console.log('joinRoom',roomId);
+            const room = roomId.toString();
+            socket.join(room);
+            socket.on('opponentTurnPayload', (arg) => {
+            console.log('fire', arg);
+            socket.to(room).emit('message', arg);
         });
-        socket.on('nextturn', () => {
-            console.log('fire1', room)
-            socket.to('a').emit('setturn')
-            // socket.broadcast.emit('setturn')
+            socket.on('nextturn', () => {
+            console.log('nextturn', room)
+            socket.to(room).emit('setturn')
         })
     });
 });

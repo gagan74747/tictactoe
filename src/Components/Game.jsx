@@ -1,9 +1,11 @@
 import { Component } from "react";
 import React from "react";
-import socket from "../socket";
 import Modal from "react-modal";
 import { Link } from "react-router-dom";
-
+import { socketEvents } from "../socket";
+import { blocksContext } from "./Context";
+import { io } from "socket.io-client";
+const socket = io("http://localhost:5000");
 const customStyles = {
   content: {
     top: "20%",
@@ -32,24 +34,20 @@ class Game extends Component {
   closeModal = () => {
     this.setState({ ...this.state, modalIsOpen: false });
   };
+  static contextType = blocksContext;
 
   componentDidMount() {
-    socket.on("connect", () => {
-      socket.on("message", (ar) => {
-        this.setState(ar);
-        value = ar.value;
+   
+   socket.on("message", (ar) => {
+   this.setState(ar);
+   value = ar.value;
       });
       socket.on("setturn", () => {
         turn = true;
-      });
-      socket.on("onReset", () => {
-        this.setState({ zeroOrCross: true, blocks: this.emptyBlocks });
-        turn = true;
-      });
-    });
+     });
   }
 
-  emptyBlocks = {
+    emptyBlocks = {
     block1: "",
     block2: "",
     block3: "",
@@ -66,21 +64,21 @@ class Game extends Component {
     modalIsOpen: false,
   };
 
-  handleClick = (e) => {
-    if (turn && e.target.innerHTML === "") {
+     handleClick = (e) => {
+     if (turn && e.target.innerHTML === ""){
       value = (this.state.zeroOrCross && "O") || "X";
       this.setState({
-        zeroOrCross: !this.state.zeroOrCross,
-        blocks: { ...this.state.blocks, [e.target.classList[1]]: value },
+      zeroOrCross: !this.state.zeroOrCross,
+      blocks: { ...this.state.blocks, [e.target.classList[1]]: value },
       });
       e.target.innerHTML === "" &&
-        socket.emit("hello", {
-          zeroOrCross: !this.state.zeroOrCross,
-          blocks: { ...this.state.blocks, [e.target.classList[1]]: value },
-          value,
+      socketEvents.opponentTurn({
+      zeroOrCross: !this.state.zeroOrCross,
+      blocks:{ ...this.state.blocks, [e.target.classList[1]]: value },
+      value,
         });
       turn = false;
-      socket.emit("nextturn");
+      socketEvents.nextTurn();
     }
   };
 
@@ -110,33 +108,24 @@ class Game extends Component {
         this.state.blocks[`block${b + 1}`] === value &&
         this.state.blocks[`block${c + 1}`] === value
       ) {
-        // window.prompt(value + " " + 'wins');
         this.openModal();
-        // this.resetBlocks();
         return;
       }
     }
     if (!this.hasNullBlocks(this.state.blocks)) {
       value = false;
       this.openModal();
-      // this.resetBlocks();
-      // window.prompt('Tie');
     }
   };
-
-  resetBlocks = () => {
-    this.setState({ zeroOrCross: true, blocks: this.emptyBlocks });
-    turn = true;
-    // socket.emit('resetState');
-  };
-
   componentDidUpdate(prevProps, prevState) {
     if (this.state.blocks !== prevState.blocks) {
       setTimeout(() => this.checkForWin(), 1);
     }
   }
-
+  
+  
   render() {
+    console.log('render');
     return (
       <>
         <Modal
@@ -151,11 +140,11 @@ class Game extends Component {
           {(value && <p style={{ textAlign: "center" }}>{value} Wins</p>) || (
             <p style={{ textAlign: "center" }}>Tie</p>
           )}
-          <Link to="/">
+        <Link to="/">
             <h6>
               Start New Game <i class="fa fa-refresh" aria-hidden="true"></i>
             </h6>
-          </Link>
+        </Link>
         </Modal>
         <h1 className="heading">Tic Tac Toe</h1>
         <div className="container">
