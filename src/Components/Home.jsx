@@ -1,12 +1,36 @@
 import React, { Component } from "react";
-import socket, { socketEvents } from "../socket";
+import { socket } from "../App";
 import { Navigate } from "react-router-dom";
-
+import Modal from "react-modal";
+const customStyles = {
+  content: {
+    top: "40%",
+    left: "49%",
+    right: "auto",
+    bottom: "auto",
+    marginRight: "-50%",
+    transform: "translate(-50%, -50%)",
+  },
+};
+Modal.setAppElement("#root");
+let subtitle;
 export default class Home extends Component {
   state = {
     genratedRoomId: "12345",
     inputRoomId: null,
     redirect: false,
+    modalIsOpen: false,
+  };
+  openModal = () => {
+    this.setState({ ...this.state, modalIsOpen: true });
+  };
+
+  afterOpenModal = () => {
+    subtitle.style.color = "#f00";
+  };
+
+  closeModal = () => {
+    this.setState({ ...this.state, modalIsOpen: false });
   };
   generateRoomId = () => {
     const digits = "0123456789";
@@ -18,21 +42,51 @@ export default class Home extends Component {
   };
   joinRoom = (e, roomId) => {
     e.preventDefault();
-    roomId && socketEvents.joinRoom(roomId);
-    this.setState({ ...this.state, redirect: true });
+    roomId && socket.emit("joinRoom", roomId);
+
+    socket.on("roomAvailable", () => {
+      this.setState({ ...this.state, redirect: true });
+    });
+    socket.on("roomFull", () => {
+      this.openModal();
+    });
   };
 
   render() {
     return (
       <>
-        { this.state.redirect && <Navigate to="/game" replace={true} /> }
+        {this.state.redirect && <Navigate to="/game" replace={true} />}
+        <Modal
+          isOpen={this.state.modalIsOpen}
+          // onAfterOpen={this.afterOpenModal}
+          onRequestClose={this.closeModal}
+          style={customStyles}
+          contentLabel="Example Modal"
+          shouldCloseOnOverlayClick={false}
+        >
+          <h5 style={{ textAlign: "center" }}>
+            ROOM FULL
+            <br />
+            Join Another Room
+          </h5>
+          <div className="text-center">
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => {
+                this.closeModal();
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </Modal>
         <div className="d-flex flex-column justify-content-center align-items-center container ">
           <form className="d-flex flex-column justify-content-center align-items-center form p-5 ">
             <div className="form-outline  ">
-            <h1 className="text-center  mb-4">Enter Room Id</h1>
+              <h1 className="text-center  mb-4">Enter Room Id</h1>
             </div>
             <div className="form-outline mt-2 mb-4 w-25">
-            <input
+              <input
                 type="text"
                 id="form1Example2"
                 className="form-control"

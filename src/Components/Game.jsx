@@ -2,10 +2,7 @@ import { Component } from "react";
 import React from "react";
 import Modal from "react-modal";
 import { Link } from "react-router-dom";
-import { socketEvents } from "../socket";
-import { blocksContext } from "./Context";
-import { io } from "socket.io-client";
-const socket = io("http://localhost:5000");
+import { socket } from "../App";
 const customStyles = {
   content: {
     top: "20%",
@@ -27,27 +24,29 @@ class Game extends Component {
   };
 
   afterOpenModal = () => {
-    // references are now sync'd and can be accessed.
     subtitle.style.color = "#f00";
   };
 
   closeModal = () => {
     this.setState({ ...this.state, modalIsOpen: false });
   };
-  static contextType = blocksContext;
-
+  setStartGame = () => {
+    this.setState({ ...this.state, startGameModal: false });
+  };
   componentDidMount() {
-   
-   socket.on("message", (ar) => {
-   this.setState(ar);
-   value = ar.value;
-      });
-      socket.on("setturn", () => {
-        turn = true;
-     });
+    socket.on("message", (ar) => {
+      this.setState(ar);
+      value = ar.value;
+    });
+    socket.on("setturn", () => {
+      turn = true;
+    });
+    socket.on("startGame", () => {
+      this.setStartGame();
+    });
   }
 
-    emptyBlocks = {
+  emptyBlocks = {
     block1: "",
     block2: "",
     block3: "",
@@ -62,23 +61,24 @@ class Game extends Component {
     zeroOrCross: true,
     blocks: this.emptyBlocks,
     modalIsOpen: false,
+    startGameModal: true,
   };
 
-     handleClick = (e) => {
-     if (turn && e.target.innerHTML === ""){
+  handleClick = (e) => {
+    if (turn && e.target.innerHTML === "") {
       value = (this.state.zeroOrCross && "O") || "X";
       this.setState({
-      zeroOrCross: !this.state.zeroOrCross,
-      blocks: { ...this.state.blocks, [e.target.classList[1]]: value },
+        zeroOrCross: !this.state.zeroOrCross,
+        blocks: { ...this.state.blocks, [e.target.classList[1]]: value },
       });
       e.target.innerHTML === "" &&
-      socketEvents.opponentTurn({
-      zeroOrCross: !this.state.zeroOrCross,
-      blocks:{ ...this.state.blocks, [e.target.classList[1]]: value },
-      value,
+        socket.emit("opponentTurnPayload", {
+          zeroOrCross: !this.state.zeroOrCross,
+          blocks: { ...this.state.blocks, [e.target.classList[1]]: value },
+          value,
         });
       turn = false;
-      socketEvents.nextTurn();
+      socket.emit("nextturn");
     }
   };
 
@@ -90,7 +90,6 @@ class Game extends Component {
   }
 
   checkForWin = () => {
-    console.log("from check for win");
     const winningConditions = [
       [0, 1, 2],
       [3, 4, 5],
@@ -109,12 +108,14 @@ class Game extends Component {
         this.state.blocks[`block${c + 1}`] === value
       ) {
         this.openModal();
+        turn = true;
         return;
       }
     }
     if (!this.hasNullBlocks(this.state.blocks)) {
       value = false;
       this.openModal();
+      turn = true;
     }
   };
   componentDidUpdate(prevProps, prevState) {
@@ -122,15 +123,13 @@ class Game extends Component {
       setTimeout(() => this.checkForWin(), 1);
     }
   }
-  
-  
+
   render() {
-    console.log('render');
     return (
       <>
         <Modal
           isOpen={this.state.modalIsOpen}
-          onAfterOpen={this.afterOpenModal}
+          // onAfterOpen={this.afterOpenModal}
           onRequestClose={this.closeModal}
           style={customStyles}
           contentLabel="Example Modal"
@@ -140,11 +139,22 @@ class Game extends Component {
           {(value && <p style={{ textAlign: "center" }}>{value} Wins</p>) || (
             <p style={{ textAlign: "center" }}>Tie</p>
           )}
-        <Link to="/">
+          <Link to="/" onClick={() => socket.emit("leaveRoom")}>
             <h6>
-              Start New Game <i class="fa fa-refresh" aria-hidden="true"></i>
+              Start New Game{" "}
+              <i className="fa fa-refresh" aria-hidden="true"></i>
             </h6>
-        </Link>
+          </Link>
+        </Modal>
+        <Modal
+          isOpen={this.state.startGameModal}
+          // onAfterOpen={this.afterOpenModal}
+          onRequestClose={this.setStartGame}
+          style={customStyles}
+          contentLabel="Example Modal"
+          shouldCloseOnOverlayClick={false}
+        >
+          <h5>Waiting for another player to join..</h5>
         </Modal>
         <h1 className="heading">Tic Tac Toe</h1>
         <div className="container">

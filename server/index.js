@@ -17,17 +17,29 @@ instrument(io, {
 });
 
 io.on("connection", (socket) => {
-            console.log(socket.id)
-            socket.on('joinRoom', (roomId) => {
-            console.log('joinRoom',roomId);
-            const room = roomId.toString();
+    console.log(socket.id)
+    socket.on('joinRoom', (roomId) => {
+        console.log('joinRoom', roomId);
+        const room = roomId.toString();
+
+        if (io.sockets.adapter.rooms.get(room) && io.sockets.adapter.rooms.get(room).size === 2) {
+            socket.emit('roomFull');
+        }
+        else {
+            socket.emit('roomAvailable');
             socket.join(room);
-            socket.on('opponentTurnPayload', (arg) => {
-            console.log('fire', arg);
+            (io.sockets.adapter.rooms.get(room).size === 2) && setTimeout(() => {
+                io.in(room).emit('startGame');
+            }, 10)
+        }
+        socket.on('leaveRoom', () => {
+            socket.leave(room)
+        })
+
+        socket.on('opponentTurnPayload', (arg) => {
             socket.to(room).emit('message', arg);
         });
-            socket.on('nextturn', () => {
-            console.log('nextturn', room)
+        socket.on('nextturn', () => {
             socket.to(room).emit('setturn')
         })
     });
