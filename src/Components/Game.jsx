@@ -2,7 +2,7 @@ import { Component } from "react";
 import React from "react";
 import Modal from "react-modal";
 import { Link } from "react-router-dom";
-import { socket } from "../App";
+import {socket}  from "../App";
 const customStyles = {
   content: {
   top: "20%",
@@ -33,6 +33,7 @@ subtitle.style.color = "#f00";
   this.setState({ ...this.state, startGameModal: false });
   };
   componentDidMount() {
+  socket.emit('onGameComponentMount');
   socket.on("message", (ar) => {
   this.setState(ar);
   value = ar.value;
@@ -40,9 +41,13 @@ subtitle.style.color = "#f00";
   socket.on("setturn", () => {
   turn = true;
   });
-  socket.on("startGame", () => {
-  this.setStartGame();
+  socket.on("inWaiting", () => {
+  this.setState({ ...this.state, startGameModal: true })
   });
+  socket.on('startGame',()=>{
+    this.setStartGame();
+  })
+  socket.on('anotherplayerdisconnected',()=>console.log('anotherplayerdisconnected'));
   }
 
   emptyBlocks = {
@@ -60,7 +65,7 @@ subtitle.style.color = "#f00";
     zeroOrCross: true,
     blocks: this.emptyBlocks,
     modalIsOpen: false,
-    startGameModal: true,
+    startGameModal: false,
   };
 
     handleClick = (e) => {
@@ -80,10 +85,9 @@ subtitle.style.color = "#f00";
     socket.emit("nextturn");
     }
   };
-    
     hasNullBlocks(target) {
     for (var member in target) {
-      if (target[member] === "") return true;
+    if (target[member] === "") return true;
     }
     return false;
   }
@@ -107,12 +111,14 @@ subtitle.style.color = "#f00";
     this.state.blocks[`block${c + 1}`] === value
     ){
     this.openModal();
+    socket.emit("leaveRoom");
     turn = true;
     return;
     }}
     if (!this.hasNullBlocks(this.state.blocks)) {
     value = false;
     this.openModal();
+    socket.emit("leaveRoom")
     turn = true;
     }
   };
@@ -136,7 +142,7 @@ subtitle.style.color = "#f00";
           {(value && <p style={{ textAlign: "center" }}>{value} Wins</p>) || (
             <p style={{ textAlign: "center" }}>Tie</p>
           )}
-        <Link to="/" onClick={() => socket.emit("leaveRoom")}>
+        <Link to="/">
         <h6>
         Start New Game{" "}
         <i className="fa fa-refresh" aria-hidden="true"></i>
