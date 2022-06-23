@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { socket } from "../App";
+import {socket}  from "../App";
 import { Navigate } from "react-router-dom";
 import Modal from "react-modal";
 const customStyles = {
