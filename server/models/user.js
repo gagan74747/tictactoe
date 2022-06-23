@@ -6,12 +6,14 @@ const userschema = mongoose.Schema({
     required: [true, 'username is a required'],
     trim: true,
     unique: true,
-    // validate: {
-    //     validator(v) {
-    //     return /^[a-z0-9.@_-+*/]{3,10}$/.test(v);
-    //     },
-    //     message: (props) => `${props.value} is not a valid TTN mail`,
-    //   },
+    minLength:[5,'username must be minimum of 5 characters'],
+    maxLength:[10,'username must be maximum of 10 characters'],
+    validate: {
+        validator(v) {
+        return /(?=.*[a-z])(?=.*[0-9])(?=.*[!@#%_])/.test(v);
+        },
+        message: (props) => `Provide a valid username`,
+      },
     },
   password: {
     type: String,
