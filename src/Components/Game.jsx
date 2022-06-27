@@ -3,6 +3,8 @@ import React from "react";
 import Modal from "react-modal";
 import { Link } from "react-router-dom";
 import { socket } from "../App";
+import { toast } from "react-toastify";
+import { Navigate } from "react-router-dom";
 const customStyles = {
   content: {
     top: "20%",
@@ -33,7 +35,30 @@ class Game extends Component {
   setStartGame = () => {
     this.setState({ ...this.state, startGameModal: false });
   };
+  getUserDetails = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/game", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          'token':localStorage.getItem('token')
+        },
+      });
+      const data = await response.json();
+      if (response.status === 200) {
+        toast.success(data.username);
+        
+      } else {
+        toast.error('User Not logged In');
+        this.setState({ ...this.state, redirectToLogin: true });
+      }
+    } catch (err) {
+      toast.error("" + err);
+    }
+  };
   componentDidMount() {
+    this.getUserDetails();
+    socket.emit("onGameComponentMount");
     socket.on("message", (ar) => {
       this.setState(ar);
       value = ar.value;
@@ -41,9 +66,15 @@ class Game extends Component {
     socket.on("setturn", () => {
       turn = true;
     });
+    socket.on("inWaiting", () => {
+      this.setState({ ...this.state, startGameModal: true });
+    });
     socket.on("startGame", () => {
       this.setStartGame();
     });
+    socket.on("anotherplayerdisconnected", () =>
+      console.log("anotherplayerdisconnected")
+    );
   }
 
   emptyBlocks = {
@@ -61,7 +92,8 @@ class Game extends Component {
     zeroOrCross: true,
     blocks: this.emptyBlocks,
     modalIsOpen: false,
-    startGameModal: true,
+    startGameModal: false,
+    redirectToLogin: false,
   };
 
   handleClick = (e) => {
@@ -81,7 +113,6 @@ class Game extends Component {
       socket.emit("nextturn");
     }
   };
-
   hasNullBlocks(target) {
     for (var member in target) {
       if (target[member] === "") return true;
@@ -108,6 +139,7 @@ class Game extends Component {
         this.state.blocks[`block${c + 1}`] === value
       ) {
         this.openModal();
+        socket.emit("leaveRoom");
         turn = true;
         return;
       }
@@ -115,6 +147,7 @@ class Game extends Component {
     if (!this.hasNullBlocks(this.state.blocks)) {
       value = false;
       this.openModal();
+      socket.emit("leaveRoom");
       turn = true;
     }
   };
@@ -127,6 +160,7 @@ class Game extends Component {
   render() {
     return (
       <>
+{this.state.redirectToLogin && <Navigate to="/" replace={true} />}
         <Modal
           isOpen={this.state.modalIsOpen}
           // onAfterOpen={this.afterOpenModal}
@@ -139,7 +173,7 @@ class Game extends Component {
           {(value && <p style={{ textAlign: "center" }}>{value} Wins</p>) || (
             <p style={{ textAlign: "center" }}>Tie</p>
           )}
-          <Link to="/" onClick={() => socket.emit("leaveRoom")}>
+          <Link to="/">
             <h6>
               Start New Game{" "}
               <i className="fa fa-refresh" aria-hidden="true"></i>
@@ -148,7 +182,6 @@ class Game extends Component {
         </Modal>
         <Modal
           isOpen={this.state.startGameModal}
-          // onAfterOpen={this.afterOpenModal}
           onRequestClose={this.setStartGame}
           style={customStyles}
           contentLabel="Example Modal"
@@ -198,5 +231,4 @@ class Game extends Component {
     );
   }
 }
-
 export default Game;

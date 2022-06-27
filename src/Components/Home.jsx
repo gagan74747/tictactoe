@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import { socket } from "../App";
 import { Navigate } from "react-router-dom";
 import Modal from "react-modal";
+import { toast } from "react-toastify";
 const customStyles = {
   content: {
     top: "40%",
@@ -18,7 +19,8 @@ export default class Home extends Component {
   state = {
     genratedRoomId: "12345",
     inputRoomId: null,
-    redirect: false,
+    redirectToGame: false,
+    redirectToLogin: false,
     modalIsOpen: false,
   };
   openModal = () => {
@@ -45,17 +47,42 @@ export default class Home extends Component {
     roomId && socket.emit("joinRoom", roomId);
 
     socket.on("roomAvailable", () => {
-      this.setState({ ...this.state, redirect: true });
+      this.setState({ ...this.state, redirectToGame: true });
     });
     socket.on("roomFull", () => {
       this.openModal();
     });
   };
+  componentDidMount() {
+    this.getUserDetails()
+  }
+  getUserDetails = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/home", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          'token':localStorage.getItem('token')
+        },
+      });
+      const data = await response.json();
+      if (response.status === 200) {
+        toast.success(data.username);
+        
+      } else {
+        toast.error('User Not logged In');
+        this.setState({ ...this.state, redirectToLogin: true });
+      }
+    } catch (err) {
+      toast.error("" + err);
+    }
+  };
 
   render() {
     return (
       <>
-        {this.state.redirect && <Navigate to="/game" replace={true} />}
+        {this.state.redirectToGame && <Navigate to="/game" replace={true} />}
+        {this.state.redirectToLogin && <Navigate to="/" replace={true} />}
         <Modal
           isOpen={this.state.modalIsOpen}
           // onAfterOpen={this.afterOpenModal}
