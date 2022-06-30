@@ -10,8 +10,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import {Zoom} from 'react-toastify';
 export const  socket = io("http://localhost:5000");
- 
-class App extends Component {
+ class App extends Component {
   render() {
     return <>
      <ToastContainer hideProgressBar={true} autoClose={1000} transition={Zoom}  position={"top-center"}/>

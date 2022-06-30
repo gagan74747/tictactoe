@@ -5,17 +5,20 @@ const { createServer } = require("http");
 const { Server } = require("socket.io");
 const { instrument } = require("@socket.io/admin-ui");
 const app = express();
+const jwt = require('jsonwebtoken');
 const cors = require("cors");
 const setheader = require('./utils/setheader')
 const httpServer = createServer(app);
-const authenticate = require('./middleware/authenticate')
+const joinRoom=require('./routes/joinroom')
 const userAuth=require('./routes/auth')
 const home=require('./routes/home')
-const game=require('./routes/game')
+const game=require('./routes/game');
+const Gamedata = require('./models/gamedata');
+const {setSocket} = require('./controllers/gameController')
 const io = new Server(httpServer, {
   cors: {
-    origin: ["http://localhost:3000", "https://admin.socket.io"],
-    credentials: true,
+  origin: ["http://localhost:3000", "https://admin.socket.io"],
+  credentials: true,
   },
 });
 mongoose.connect('mongodb+srv://dbuser:Waheguru747477%40@cluster0.pkxnk.mongodb.net/tictactoe?retryWrites=true&w=majority')
@@ -34,14 +37,15 @@ app.use(
     credentials: "true",
   }));
 
-app.use('',home);
-app.use('',game);
-app.use('',userAuth)
+ app.use('/api',home);
+ app.use('/api',game);
+ app.use('/api',userAuth)
+ app.use('/api',joinRoom)
 
-
-io.on("connection", (socket) => {
-  console.log(socket.id);
-  socket.on("joinRoom", (roomId) => {
+    io.on("connection", (socket) => {
+    setSocket(socket);
+    console.log(socket.id);
+    socket.on("joinRoom", (roomId) => {
     console.log("joinRoom", roomId);
     const room = roomId.toString();
     if (
@@ -53,7 +57,8 @@ io.on("connection", (socket) => {
       socket.emit("roomAvailable");
       socket.join(room);
     }
-    socket.on("leaveRoom", () => {
+      socket.on("leaveRoom", async () => {
+       await Gamedata.deleteOne({roomId:room})
       socket.leave(room);
     });
     socket.on("opponentTurnPayload", (arg) => {
@@ -64,11 +69,11 @@ io.on("connection", (socket) => {
     });
     socket.on("onGameComponentMount", () => {
       io.sockets.adapter.rooms.get(room) &&
-        io.sockets.adapter.rooms.get(room).size === 1 &&
-        socket.emit("inWaiting");
+      io.sockets.adapter.rooms.get(room).size === 1 &&
+      socket.emit("inWaiting");
       io.sockets.adapter.rooms.get(room) &&
-        io.sockets.adapter.rooms.get(room).size === 2 &&
-        socket.to(room).emit("startGame");
+      io.sockets.adapter.rooms.get(room).size === 2 &&
+      socket.to(room).emit("startGame");
     });
     socket.on("disconnect", () => {
       socket.to(room).emit("anotherplayerdisconnected"); // undefined
@@ -76,3 +81,4 @@ io.on("connection", (socket) => {
   })
 });
 httpServer.listen(5000);
+module.exports = io;

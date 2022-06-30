@@ -26,7 +26,34 @@ export default class Home extends Component {
   openModal = () => {
     this.setState({ ...this.state, modalIsOpen: true });
   };
+  pushUserToRoom = async(roomId) => {
+    const response = await fetch('http://localhost:5000/api/joinRoom',{
+    method:'POST',
+    body:JSON.stringify({
+    roomId
+    }),
+    headers: {
+    "Content-Type": "application/json",
+    'token':localStorage.getItem('token')
+    }});
+    const data = await response.json();
+    if(response.status===200){
+    toast.success(data.message);
+    socket.emit("joinRoom", roomId);
+    socket.on("roomAvailable", () => {
+    this.setState({ ...this.state, redirectToGame: true });
+    });
+    socket.on("roomFull", () => {
+    this.openModal();
+    });
+    }
+    else{
+      toast.error(data.message)
+    }
 
+    
+    console.log(response.status);
+  }
   afterOpenModal = () => {
     subtitle.style.color = "#f00";
   };
@@ -44,21 +71,14 @@ export default class Home extends Component {
   };
   joinRoom = (e, roomId) => {
     e.preventDefault();
-    roomId && socket.emit("joinRoom", roomId);
-
-    socket.on("roomAvailable", () => {
-      this.setState({ ...this.state, redirectToGame: true });
-    });
-    socket.on("roomFull", () => {
-      this.openModal();
-    });
+    roomId && this.pushUserToRoom(roomId);
   };
   componentDidMount() {
-    this.getUserDetails()
+  this.getUserDetails()
   }
   getUserDetails = async () => {
     try {
-      const response = await fetch("http://localhost:5000/home", {
+      const response = await fetch("http://localhost:5000/api/home", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -69,10 +89,12 @@ export default class Home extends Component {
       if (response.status === 200) {
         toast.success(data.username);
         
-      } else {
+      } else if(response.status === 307) {
         toast.error('User Not logged In');
         this.setState({ ...this.state, redirectToLogin: true });
       }
+      else
+      toast.error(data.message);
     } catch (err) {
       toast.error("" + err);
     }

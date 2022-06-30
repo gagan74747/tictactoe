@@ -13,7 +13,6 @@ async function Authenticate(req, res, next) {
     if (!rootuser) { throw new Error('redirect'); }
     req.username= rootuser.username;
     req.user_id = rootuser._id;
-    
     next();
   } catch (err) {
     res.status(307).json({ message: 'redirect' });
