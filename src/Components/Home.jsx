@@ -1,7 +1,8 @@
 import React, { Component } from "react";
-import {socket}  from "../App";
+import { socket } from "../App";
 import { Navigate } from "react-router-dom";
 import Modal from "react-modal";
+import { toast } from "react-toastify";
 const customStyles = {
   content: {
     top: "40%",
@@ -18,13 +19,41 @@ export default class Home extends Component {
   state = {
     genratedRoomId: "12345",
     inputRoomId: null,
-    redirect: false,
+    redirectToGame: false,
+    redirectToLogin: false,
     modalIsOpen: false,
   };
   openModal = () => {
     this.setState({ ...this.state, modalIsOpen: true });
   };
+  pushUserToRoom = async(roomId) => {
+    const response = await fetch('http://localhost:5000/api/joinRoom',{
+    method:'POST',
+    body:JSON.stringify({
+    roomId
+    }),
+    headers: {
+    "Content-Type": "application/json",
+    'token':localStorage.getItem('token')
+    }});
+    const data = await response.json();
+    if(response.status===200){
+    toast.success(data.message);
+    socket.emit("joinRoom", roomId);
+    socket.on("roomAvailable", () => {
+    this.setState({ ...this.state, redirectToGame: true });
+    });
+    socket.on("roomFull", () => {
+    this.openModal();
+    });
+    }
+    else{
+      toast.error(data.message)
+    }
 
+    
+    console.log(response.status);
+  }
   afterOpenModal = () => {
     subtitle.style.color = "#f00";
   };
@@ -42,20 +71,40 @@ export default class Home extends Component {
   };
   joinRoom = (e, roomId) => {
     e.preventDefault();
-    roomId && socket.emit("joinRoom", roomId);
-
-    socket.on("roomAvailable", () => {
-      this.setState({ ...this.state, redirect: true });
-    });
-    socket.on("roomFull", () => {
-      this.openModal();
-    });
+    roomId && this.pushUserToRoom(roomId);
+  };
+  componentDidMount() {
+  this.getUserDetails()
+  }
+  getUserDetails = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/home", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          'token':localStorage.getItem('token')
+        },
+      });
+      const data = await response.json();
+      if (response.status === 200) {
+        toast.success(data.username);
+        
+      } else if(response.status === 307) {
+        toast.error('User Not logged In');
+        this.setState({ ...this.state, redirectToLogin: true });
+      }
+      else
+      toast.error(data.message);
+    } catch (err) {
+      toast.error("" + err);
+    }
   };
 
   render() {
     return (
       <>
-        {this.state.redirect && <Navigate to="/game" replace={true} />}
+        {this.state.redirectToGame && <Navigate to="/game" replace={true} />}
+        {this.state.redirectToLogin && <Navigate to="/" replace={true} />}
         <Modal
           isOpen={this.state.modalIsOpen}
           // onAfterOpen={this.afterOpenModal}
