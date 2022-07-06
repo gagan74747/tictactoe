@@ -5,7 +5,11 @@ const gameDataSchema = mongoose.Schema({
     type: String,
   } ,
   users:[{type:mongoose.Schema.Types.ObjectId}],
-  gameData:{type:Object}
+  gamedata:{type:Object},
+  turn : {
+    type :String,
+    default : '',
+  }
 });
 const GameDataSchema = mongoose.model('Gamedata', gameDataSchema);
 module.exports = GameDataSchema;

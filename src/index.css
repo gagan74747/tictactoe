@@ -12,12 +12,6 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
 }
-.resetbutton {
-  margin-top: 180px;
-  border-radius: 20px;
-  margin-right: 30px;
-  font-weight: bold;
-}
 .container {
   display: flex;
   height: 85vh;
@@ -25,6 +19,7 @@ code {
   justify-content: center;
   align-items: center;
   width: 100%;
+  
 }
 .child-container {
   width: 40%;
@@ -43,6 +38,7 @@ code {
   color: red;
   font-weight: bold;
   border-radius: 13px;
+
 }
 .block:hover {
   background-color: rgb(0, 231, 0);
@@ -96,6 +92,7 @@ code {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+
 }
 .eye{
   position:absolute;
@@ -107,5 +104,66 @@ code {
    .block{
     font-size: 58px;
   }
+}
+.parentloader{
+display:flex;
+justify-content: center;
+align-items:center;
+height:80%;    /* height and width not necessary as in spinner I have given h & w in vw & vh. As z index is positive so as to stop clicks when loader is on we have to give h & w so user can't click on blocks as it lies beneath the h&w then  */
+position:absolute;
+width:80%;
+z-index:1;
+background-color:white;
+opacity:0.97
+}
+.spinner{
+  width:calc(10vw + 20vh);
+  height:calc(10vw + 20vh);
+}
+.turn-selector{
+  position:absolute;
+  top:2%;
+  left:34%;
+  right:34%;
+  width:30%;
+  font-size:x-large;
+  font-weight: bold;
+  color:rgb(0, 231, 0);
+  display:none;
+  text-align: center;
+}
+.invite-link{
+  display:flex;
+  flex-wrap:wrap;
+  width:80%;
+  justify-content:center
+}
+.link{
+  display:flex;
+  justify-content: center;
+  align-items: center;
+  flex-basis:80%;
+  overflow:auto;
+  word-break: break-all;
+  background-color: rgb(239,239,239);
+}
+.online-friends{
+  box-shadow: 0px 0px 16px -8px rgba(0, 0, 0, 0.68);
+  width:20%;
+  height:50%;
+  z-index:1;
+  position:absolute;
+  left:40%;
+  right:40%;
+  top:20%;
+  bottom:30%;
+  box-sizing: border-box;
+  
+
+}
+.close-icon{
+  position:absolute;
+  right:4%;
+  top:2%;
 }
 

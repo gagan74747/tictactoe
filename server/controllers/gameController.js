@@ -1,8 +1,5 @@
 const Gamedata = require('../models/gamedata');
-let socket;
-const setSocket = (SOCKET)=>{
-    socket = SOCKET;
-}  
+
    const game = async (req, res) => {
     try {
     // const user_id=req.user_id;
@@ -23,4 +20,4 @@ const setSocket = (SOCKET)=>{
    return res.status(401).json({ message: ` ${err}` });
 }
 }
-module.exports = {game,setSocket};
+module.exports = {game};
