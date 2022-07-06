@@ -1,10 +1,17 @@
-const home = async (req, res) => {
-    try {
+const Gamedata = require("../models/gamedata");
 
-        res.status(200).json({ username: req.username })
+const home = async (req, res) => {
+  try {
+    const  user_id  = req.user_id;
+    const gamedata = await Gamedata.findOne({ users: { $in: [user_id] } });
+    if (gamedata) {
+    gamedata.users = gamedata.users.filter((user) => user.toString() !== user_id.toString());
+    gamedata.gamedata=undefined;
+    gamedata.turn='';
+    await gamedata.save();
     }
-    catch (err) {
-        return res.status(401).json({ message: ` ${err}` });
-    }
-}
-module.exports = {home};
+    res.status(200).json({ username: req.username });
+  }catch (err) {
+    return res.status(401).json({ message: ` ${err}` });
+  }};
+module.exports = { home };

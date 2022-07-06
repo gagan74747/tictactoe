@@ -1,12 +1,15 @@
 const mongoose = require('mongoose');
 
 const gameDataSchema = mongoose.Schema({
-  
-  roomId: {
+   roomId: {
     type: String,
   } ,
   users:[{type:mongoose.Schema.Types.ObjectId}],
-  gameData:{type:Object}
+  gamedata:{type:Object},
+  turn : {
+    type :String,
+    default : '',
+  }
 });
-const GameDataSchema = mongoose.model('Users', gameDataSchema);
-module.exports = Users;
+const GameDataSchema = mongoose.model('Gamedata', gameDataSchema);
+module.exports = GameDataSchema;

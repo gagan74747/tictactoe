@@ -7,14 +7,15 @@ export default class Login extends Component {
   state={
   username:'',
   password:'',
-  redirectToHome:false
+  redirectToHome:false,
+  showpassword:false
   }
   handleInput= (e)=>{
   this.setState({...this.state,[e.target.name]:e.target.value})
   }
   handleLogin = async() => {
   try{
-  const response = await fetch('http://localhost:5000/login',{
+  const response = await fetch('http://localhost:5000/api/login',{
   method:'POST',
   headers: {
   'Content-Type': 'application/json',
@@ -48,16 +49,16 @@ export default class Login extends Component {
           <div className="form-outline  mb-4">
             <input  name='username' type="text" id="form2Example1" className="form-control " placeholder='Username' onChange={this.handleInput}/>
            </div>
-            <div className="form-outline mb-4">
+            <div className="form-outline mb-4 position-relative">
             <input
-              type="password"
+              type={(this.state.showpassword && 'text') || ('password')}
               name='password'
               id="form2Example2"
               className="form-control"
               placeholder='password'
               onChange={this.handleInput}
               />
-           
+           <span className='fa fa-eye eye' onClick={()=>this.setState({...this.state,showpassword:!this.state.showpassword})}></span>
           </div>
 
           <div className="d-flex justify-content-center">
@@ -73,7 +74,7 @@ export default class Login extends Component {
         </form>
       </div>
       </div>
-              </>
+    </>
     );
   }
 }
