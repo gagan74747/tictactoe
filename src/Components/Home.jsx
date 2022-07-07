@@ -6,6 +6,7 @@ import Modal from "react-modal";
 import { toast } from "react-toastify";
 import messageCleaner from "../utils/messageCleaner";
 import copyToClipboard from "../utils/copyToClipboard";
+import queryString from 'query-string'
 
 const customStyles = {
   content: {
@@ -20,8 +21,10 @@ const customStyles = {
 let myusername;
 Modal.setAppElement("#root");
 let subtitle;
-export default class Home extends Component {
-  container=React.createRef(null);
+class Home extends Component {
+   queryParams = new URLSearchParams(window.location.search)
+   roomIdFromParams = this.queryParams.get("roomId")
+   container=React.createRef(null);
   state = {
     genratedRoomId: "",
     inputRoomId: null,
@@ -118,7 +121,8 @@ export default class Home extends Component {
   render() {
     // const search = this.props.location.search;
     // const name = new URLSearchParams(search).get("roomId");
-    console.log(this.props);
+    console.log(this.term)
+
 
     return (
       <>
@@ -227,3 +231,4 @@ export default class Home extends Component {
     );
   }
 }
+export default Home;

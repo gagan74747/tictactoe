@@ -8,8 +8,11 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import {Zoom} from 'react-toastify';
+import { useParams } from "react-router-dom";
+
 
  class App extends Component {
+
   render() {
     return <>
      <ToastContainer hideProgressBar={true} autoClose={1000} transition={Zoom}  position={"top-center"}/>
@@ -18,7 +21,6 @@ import {Zoom} from 'react-toastify';
             <Route path="/" element={<Login />} />
             <Route path="/Signup" element={<Signup />} />
             <Route path="/home" element={<Home />} />
-            <Route path="/home/:id" element={<Home />} />
             <Route path="/game" element={<Game />} />
             <Route path="/*" element={<NotFound />} />
           </Routes>
