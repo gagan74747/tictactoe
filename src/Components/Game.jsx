@@ -11,7 +11,7 @@ import winningAudio from '../tictactoewin.mp3'
 import messageCleaner from '../utils/messageCleaner'
 import jwt from 'jwt-decode';
 
-const user_id = jwt(localStorage.getItem('token'))._id;
+const user_id = localStorage.getItem('token') && jwt(localStorage.getItem('token'))._id;
 let subtitle;
 const customStyles = {
   content: {
@@ -176,6 +176,12 @@ handleClick = (e) => {
   this.value === 'O' && audio1.play();}
 
 componentDidMount() { 
+  socket.on('refreshPage',(message)=>{
+    toast.error(message);
+    setTimeout(()=>{
+      window.location.reload();
+    },1000)
+   })
 this.Interval = setInterval(()=>{
   if(this.turndesign % 3 === 0)
  document.getElementsByClassName('turn-design')[0].innerHTML = '.';
@@ -194,7 +200,6 @@ socket.emit('gameComponentRefresh',localStorage.getItem('token'),socket.emit);
 socket.on('afterGameComponentRefresh',(message)=>{
   if(messageCleaner(message) === 'toHome'){
   this.setState({...this.state,redirectToHome:true});
-  toast.error('Enter RoomId to join')
   }
   else if(messageCleaner(message) === 'toLogin')
   {
@@ -207,8 +212,7 @@ socket.on('afterGameComponentRefresh',(message)=>{
   }) //gamecomponentrefresh finishes its work we can wrap gamecomponentmount event in setTimeout and it works also  but it is not a better way for production levels thats why written in 
   }); //else and below written socket.ongamecomponentmount not works as already explained so have to additionally write it here
 
-socket.emit("onGameComponentMount")// socket.onconnect events fires only on refresh ,so on room joining from home and redirecting to game we have to fire another socket.ongamecomponentmount as socket.onconnect not fires in this situation
-
+socket.emit("onGameComponentMount");// socket.onconnect events fires only on refresh ,so on room joining from home and redirecting to game we have to fire another socket.ongamecomponentmount as socket.onconnect not fires in this situation
 socket.on("message", (gamedata,turn) => {  
 this.setState(gamedata);
 this.value = gamedata.value;
@@ -229,7 +233,7 @@ this.turn = turn;
 document.getElementsByClassName('parentloader')[0].style.display='none';
 document.getElementsByClassName('turn-selector')[0].style.display='block';
 if(gamedata) 
-return this.setState(gamedata);
+return this.setState({...gamedata,startGameModal: false });
 this.setStartGame();
 });
 

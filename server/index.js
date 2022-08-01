@@ -28,6 +28,7 @@ mongoose.connect('mongodb+srv://dbuser:Waheguru747477%40@cluster0.pkxnk.mongodb.
 instrument(io, {
   auth: false,
 });
+
 app.use(express.json());
 app.use(setheader);
 app.use(
@@ -87,7 +88,8 @@ app.use(
       io.sockets.adapter.rooms.get(room).size === 1 &&
       socket.emit("inWaiting");
       if( io.sockets.adapter.rooms.get(room) && io.sockets.adapter.rooms.get(room).size === 2)
-      { const data = await Gamedata.findOne({roomId:room});
+      { 
+        const data = await Gamedata.findOne({roomId:room});
         if(data.turn === ''){
         data.turn = data.users[0];
         await data.save();
@@ -98,6 +100,13 @@ app.use(
       socket.on("disconnect", () => {
       socket.to(room).emit("anotherplayerdisconnected");
     })
+  });
+  socket.on('quitRoom',async (roomId)=>{
+    console.log('meowbilli')
+const result = await Gamedata.deleteOne({roomId});
+if(result.acknowledged)
+socket.to(roomId).emit('refreshPage',"Opponent left");
+socket.emit('refreshPage')
   })
 });
 httpServer.listen(5000);

@@ -6,8 +6,11 @@ const {roomId} = req.body;
 const user_id = req.user_id;
 if(!roomId)
 return res.status(400).json({message:'roomId is required'});
-if(await Gamedata.findOne({users:{$in :[user_id]}}))
-return res.status(400).json({message:'User already joined in another room'});
+const alreadyInGame = await Gamedata.findOne({users:{$in :[user_id]}})
+if(alreadyInGame)
+{
+alreadyInGame.roomId===roomId ?  res.status(200).json({message:"room joined"}) : res.status(400).json({message:'User already joined in another room'});
+return }
 const gamedata = await Gamedata.findOne({roomId});
 if(!gamedata){
 const gamedata = new Gamedata({roomId});

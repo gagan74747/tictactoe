@@ -6,7 +6,6 @@ import Modal from "react-modal";
 import { toast } from "react-toastify";
 import messageCleaner from "../utils/messageCleaner";
 import copyToClipboard from "../utils/copyToClipboard";
-import queryString from 'query-string'
 
 const customStyles = {
   content: {
@@ -33,6 +32,7 @@ class Home extends Component {
     modalIsOpen: false,
     toggleInviteFriends: false,
     toggleOnlineFriends: false,
+    alreadyInRoomModal:{value:false,roomId:null}
   };
   openModal = () => {
     this.setState({ ...this.state, modalIsOpen: true });
@@ -50,7 +50,6 @@ class Home extends Component {
     });
     const data = await response.json();
     if (response.status === 200) {
-      toast.success(data.message);
       socket.emit("joinRoom", roomId, myusername);
       socket.on("roomAvailable", () => {
         this.setState({ ...this.state, redirectToGame: true });
@@ -68,9 +67,20 @@ class Home extends Component {
   closeModal = () => {
     this.setState({ ...this.state, modalIsOpen: false });
   };
+  handleAlreadyInRoomModal(roomId){
+    this.setState({alreadyInRoomModal:{value:true,
+    roomId}}
+    )
+    this.container.current.style.opacity='0.07'
+  }
+  handleAlreadyInRoom=()=>{
+   this.pushUserToRoom(this.state.alreadyInRoomModal.roomId)
+  }
+  handleQuitRoom=()=>{
+    socket.emit('quitRoom',this.state.alreadyInRoomModal.roomId);
+  }
   handleOnlineFriends = (e) => {
   e.preventDefault();
-  console.log('here')
   this.setState({...this.state,toggleOnlineFriends:true});
    this.container.current.style.opacity='0.07'
   }
@@ -95,7 +105,13 @@ class Home extends Component {
     roomId && this.pushUserToRoom(roomId);
   };
   componentDidMount() {
+    socket.on('refreshPage',()=>{
+      console.log('meowcat')
+      window.location.reload()})
     this.getUserDetails();
+  }
+  componentWillUnmount(){
+    socket.off('refreshPage')
   }
   getUserDetails = async () => {
     try {
@@ -109,23 +125,33 @@ class Home extends Component {
       const data = await response.json();
       if (response.status === 200) {
         myusername = data.username;
+        if(data.roomId)
+        this.handleAlreadyInRoomModal(data.roomId);
+        else
+        this.roomIdFromParams && this.pushUserToRoom(this.roomIdFromParams);
+        document.getElementsByClassName('parentloader')[0].style.display='none';
       } else if (response.status === 307) {
         toast.error("User Not logged In");
         this.setState({ ...this.state, redirectToLogin: true });
       } else toast.error(data.message);
     } catch (err) {
       toast.error(messageCleaner("" + err));
+      document.getElementsByClassName('parentloader')[0].style.display='none';
     }
   };
 
   render() {
     // const search = this.props.location.search;
     // const name = new URLSearchParams(search).get("roomId");
-    console.log(this.term)
+   
 
 
     return (
       <>
+      <div className="parentloader" >
+  <div className="spinner-border spinner">
+  </div>
+</div>
         {this.state.redirectToGame && <Navigate to="/game" replace={true} />}
         {this.state.redirectToLogin && <Navigate to="/" replace={true} />}
         <Modal
@@ -153,12 +179,17 @@ class Home extends Component {
         </Modal>
         {this.state.toggleOnlineFriends && (
           <div className="online-friends">
+            
             <h3 className='text-center' style={{fontSize:'2rem',overflow:'auto'}}>in Waiting...</h3>
             <span className="fa fa-times close-icon" style={{cursor:'pointer'}} onClick={this.closeOnlineFriendDialogue}></span>
           
           
           </div>
+          
         )}
+         {this.state.alreadyInRoomModal.value && <div className='in-room-modal  d-flex flex-column align-items-center justify-content-center' ><h1 style={{cursor:'pointer'}} className='text-center' onClick={this.handleAlreadyInRoom}>Continue to room {" "}{this.state.alreadyInRoomModal.roomId}</h1>
+         <button className='btn btn-danger btn-sm mt-4' onClick={this.handleQuitRoom}>Leave</button>
+         </div>}
         <div className="d-flex flex-column justify-content-center align-items-center container" ref={this.container}>
           <form className="d-flex flex-column justify-content-center align-items-center form p-5 ">
             <div className="form-outline  ">
