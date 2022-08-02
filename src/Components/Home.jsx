@@ -32,7 +32,8 @@ class Home extends Component {
     modalIsOpen: false,
     toggleInviteFriends: false,
     toggleOnlineFriends: false,
-    alreadyInRoomModal:{value:false,roomId:null}
+    alreadyInRoomModal:{value:false,roomId:null},
+    playersOnline:[]
   };
   openModal = () => {
     this.setState({ ...this.state, modalIsOpen: true });
@@ -71,7 +72,11 @@ class Home extends Component {
     this.setState({alreadyInRoomModal:{value:true,
     roomId}}
     )
-    this.container.current.style.opacity='0.07'
+    this.container.current.style.opacity='0.07';
+    this.container.current.style.pointerEvents='none';
+  }
+  handleOnlinePlayers=(roomId)=>{
+    this.pushUserToRoom(roomId)
   }
   handleAlreadyInRoom=()=>{
    this.pushUserToRoom(this.state.alreadyInRoomModal.roomId)
@@ -82,11 +87,11 @@ class Home extends Component {
   handleOnlineFriends = (e) => {
   e.preventDefault();
   this.setState({...this.state,toggleOnlineFriends:true});
-   this.container.current.style.opacity='0.07'
+   this.container.current.style.opacity='0.07';
   }
   closeOnlineFriendDialogue = () => {
     this.setState({...this.state,toggleOnlineFriends:false});
-    this.container.current.style.opacity='1'
+    this.container.current.style.opacity='1';
   }
   generateRoomId = () => {
     const digits = "0abc1def3gH4IJ5KL6M8N7OP9qS";
@@ -105,13 +110,16 @@ class Home extends Component {
     roomId && this.pushUserToRoom(roomId);
   };
   componentDidMount() {
+    socket.on('updatedOnlinePlayers',(playersOnline)=>{
+      this.setState({playersOnline})
+    })
     socket.on('refreshPage',()=>{
-      console.log('meowcat')
-      window.location.reload()})
+    window.location.reload()})
     this.getUserDetails();
   }
   componentWillUnmount(){
     socket.off('refreshPage')
+    socket.off('updatedOnlinePlayers');
   }
   getUserDetails = async () => {
     try {
@@ -179,12 +187,16 @@ class Home extends Component {
         </Modal>
         {this.state.toggleOnlineFriends && (
           <div className="online-friends">
-            
-            <h3 className='text-center' style={{fontSize:'2rem',overflow:'auto'}}>in Waiting...</h3>
+          <h3 className='text-center' style={{fontSize:'2rem',overflow:'auto'}}>in Waiting...</h3>
             <span className="fa fa-times close-icon" style={{cursor:'pointer'}} onClick={this.closeOnlineFriendDialogue}></span>
-          
-          
-          </div>
+          {this.state.playersOnline.length>0 &&  this.state.playersOnline.map((player)=>{
+             return (
+              <><div  className='d-flex justify-content-between p-3' key={player.users[0].username}>
+    <span>{player.users[0].username}</span>
+    <button className='btn btn-sm btn-success' onClick={()=>this.handleOnlinePlayers(player.roomId)}>JOIN</button>
+    </div></>)
+          })}
+        </div>
           
         )}
          {this.state.alreadyInRoomModal.value && <div className='in-room-modal  d-flex flex-column align-items-center justify-content-center' ><h1 style={{cursor:'pointer'}} className='text-center' onClick={this.handleAlreadyInRoom}>Continue to room {" "}{this.state.alreadyInRoomModal.roomId}</h1>
@@ -251,11 +263,12 @@ class Home extends Component {
                 </button>
               </>
             )}
+         <div className='d-flex justify-content-center text-center'>
           <a href="#" style={{ fontWeight: "bold", color: "black", margin: "20px" }}
           onClick={this.handleOnlineFriends}
             >
             Online Friends
-            </a>
+            </a></div>
           </form>
         </div>
       </>
