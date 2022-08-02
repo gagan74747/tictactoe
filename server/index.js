@@ -20,7 +20,8 @@ const io = new Server(httpServer, {
   credentials: true,
   },
 });
-console.log(config.get('name'))
+require('./controllers/polling')(io);
+
 mongoose.connect('mongodb+srv://dbuser:Waheguru747477%40@cluster0.pkxnk.mongodb.net/tictactoe?retryWrites=true&w=majority')
   .then(() => console.log('Connected to MongoDB...'))
   .catch((err) => console.error(`${err}`));
@@ -53,15 +54,10 @@ app.use(
      socket.on("joinRoom", (roomId,username) => {
     console.log("joinRoom", roomId);
     const room = roomId.toString();
-    if (
-      io.sockets.adapter.rooms.get(room) &&
-      io.sockets.adapter.rooms.get(room).size === 2
-    ) {
-      socket.emit("roomFull");
-    } else {
+    
       socket.emit("roomAvailable");
       socket.join(room);
-    }
+    
       socket.on("leaveRoom", async (user_id) => {
       try{ const data = await Gamedata.findOneAndUpdate({roomId:room},{$pull:{users:user_id}},{ new:true});
       data && data.users.length === 0 && await Gamedata.deleteOne({roomId:room});
@@ -87,7 +83,7 @@ app.use(
       io.sockets.adapter.rooms.get(room) && //room is accessed as js follows closure such that the instance of socket in which join room is fired ,when that same instance of socket emits gamecomponentmount the room is accessed from join room as it is protected because of closure
       io.sockets.adapter.rooms.get(room).size === 1 &&
       socket.emit("inWaiting");
-      if( io.sockets.adapter.rooms.get(room) && io.sockets.adapter.rooms.get(room).size === 2)
+      if( io.sockets.adapter.rooms.get(room) && io.sockets.adapter.rooms.get(room).size >= 2)
       { 
         const data = await Gamedata.findOne({roomId:room});
         if(data.turn === ''){
@@ -102,7 +98,6 @@ app.use(
     })
   });
   socket.on('quitRoom',async (roomId)=>{
-    console.log('meowbilli')
 const result = await Gamedata.deleteOne({roomId});
 if(result.acknowledged)
 socket.to(roomId).emit('refreshPage',"Opponent left");
@@ -110,4 +105,6 @@ socket.emit('refreshPage')
   })
 });
 httpServer.listen(5000);
-module.exports = io;
+
+
+
