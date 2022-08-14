@@ -11,7 +11,7 @@ const httpServer = createServer(app);
 const joinRoom=require('./routes/joinroom')
 const userAuth=require('./routes/auth')
 const home=require('./routes/home')
-const game=require('./routes/game');
+const getFriendsInWaiting = require('./routes/getFriendsInWaiting')
 const Gamedata = require('./models/gamedata');
 const onConnectionRefresh = require('./controllers/connectionRefreshController')
 const io = new Server(httpServer, {
@@ -39,10 +39,10 @@ app.use(
   }));
 
  app.use('/api',home);
- app.use('/api',game);
  app.use('/api',userAuth);
  app.use('/api',joinRoom);
-
+ app.use('/api',getFriendsInWaiting);
+ 
     io.on("connection", (socket) => {
     console.log(socket.id);
     socket.on('gameComponentRefresh',(jwtoken,obj)=>{
@@ -90,6 +90,8 @@ app.use(
         data.turn = data.users[0];
         await data.save();
         }
+        if(data.users.length === 1)
+        return socket.emit('inWaiting')
         io.in(room).emit("startGame",data.gamedata,data.turn);
          socket.to(room).emit('opponentjoined',username)}
     });
@@ -105,6 +107,13 @@ socket.emit('refreshPage')
   })
 });
 httpServer.listen(5000);
-
+process
+  .on("unhandledRejection", (reason, p) => {
+    console.error(reason, "Unhandled Rejection at Promise", p);
+  })
+  .on("uncaughtException", (err) => {
+    console.error(err, "Uncaught Exception thrown");
+    process.exit(1);
+  });
 
 

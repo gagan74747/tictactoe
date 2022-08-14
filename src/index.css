@@ -181,3 +181,28 @@ height:calc(10vw + 20vh);
   top:20%;
   box-sizing: border-box;
 }
+.logout{
+position:absolute;
+top:28px;
+right:29px;
+font-weight: bold;
+border:2px solid rgb(201, 0, 0);
+background-color: rgb(201, 0, 0);
+color:white;
+padding:2px 10px;
+box-sizing: border-box;
+border-radius: 4px;
+cursor:pointer
+}
+@media screen and (max-width: 1074px) {
+  .logout {
+      position: absolute;
+      bottom: -15px;
+      top:auto;
+      right:auto
+      
+    }
+    .form{
+      position: relative;
+    }
+}
