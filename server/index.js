@@ -11,7 +11,7 @@ const httpServer = createServer(app);
 const joinRoom=require('./routes/joinroom')
 const userAuth=require('./routes/auth')
 const home=require('./routes/home')
-const game=require('./routes/game');
+const getFriendsInWaiting = require('./routes/getFriendsInWaiting')
 const Gamedata = require('./models/gamedata');
 const onConnectionRefresh = require('./controllers/connectionRefreshController')
 const io = new Server(httpServer, {
@@ -20,7 +20,8 @@ const io = new Server(httpServer, {
   credentials: true,
   },
 });
-console.log(config.get('name'))
+require('./controllers/polling')(io);
+
 mongoose.connect('mongodb+srv://dbuser:Waheguru747477%40@cluster0.pkxnk.mongodb.net/tictactoe?retryWrites=true&w=majority')
   .then(() => console.log('Connected to MongoDB...'))
   .catch((err) => console.error(`${err}`));
@@ -28,6 +29,7 @@ mongoose.connect('mongodb+srv://dbuser:Waheguru747477%40@cluster0.pkxnk.mongodb.
 instrument(io, {
   auth: false,
 });
+
 app.use(express.json());
 app.use(setheader);
 app.use(
@@ -37,10 +39,10 @@ app.use(
   }));
 
  app.use('/api',home);
- app.use('/api',game);
  app.use('/api',userAuth);
  app.use('/api',joinRoom);
-
+ app.use('/api',getFriendsInWaiting);
+ 
     io.on("connection", (socket) => {
     console.log(socket.id);
     socket.on('gameComponentRefresh',(jwtoken,obj)=>{
@@ -52,15 +54,10 @@ app.use(
      socket.on("joinRoom", (roomId,username) => {
     console.log("joinRoom", roomId);
     const room = roomId.toString();
-    if (
-      io.sockets.adapter.rooms.get(room) &&
-      io.sockets.adapter.rooms.get(room).size === 2
-    ) {
-      socket.emit("roomFull");
-    } else {
+    
       socket.emit("roomAvailable");
       socket.join(room);
-    }
+    
       socket.on("leaveRoom", async (user_id) => {
       try{ const data = await Gamedata.findOneAndUpdate({roomId:room},{$pull:{users:user_id}},{ new:true});
       data && data.users.length === 0 && await Gamedata.deleteOne({roomId:room});
@@ -86,19 +83,37 @@ app.use(
       io.sockets.adapter.rooms.get(room) && //room is accessed as js follows closure such that the instance of socket in which join room is fired ,when that same instance of socket emits gamecomponentmount the room is accessed from join room as it is protected because of closure
       io.sockets.adapter.rooms.get(room).size === 1 &&
       socket.emit("inWaiting");
-      if( io.sockets.adapter.rooms.get(room) && io.sockets.adapter.rooms.get(room).size === 2)
-      { const data = await Gamedata.findOne({roomId:room});
+      if( io.sockets.adapter.rooms.get(room) && io.sockets.adapter.rooms.get(room).size >= 2)
+      { 
+        const data = await Gamedata.findOne({roomId:room});
         if(data.turn === ''){
         data.turn = data.users[0];
         await data.save();
         }
+        if(data.users.length === 1)
+        return socket.emit('inWaiting')
         io.in(room).emit("startGame",data.gamedata,data.turn);
          socket.to(room).emit('opponentjoined',username)}
     });
       socket.on("disconnect", () => {
       socket.to(room).emit("anotherplayerdisconnected");
     })
+  });
+  socket.on('quitRoom',async (roomId)=>{
+const result = await Gamedata.deleteOne({roomId});
+if(result.acknowledged)
+socket.to(roomId).emit('refreshPage',"Opponent left");
+socket.emit('refreshPage')
   })
 });
 httpServer.listen(5000);
-module.exports = io;
+process
+  .on("unhandledRejection", (reason, p) => {
+    console.error(reason, "Unhandled Rejection at Promise", p);
+  })
+  .on("uncaughtException", (err) => {
+    console.error(err, "Uncaught Exception thrown");
+    process.exit(1);
+  });
+
+

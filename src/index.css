@@ -109,16 +109,17 @@ code {
 display:flex;
 justify-content: center;
 align-items:center;
-height:80%;    /* height and width not necessary as in spinner I have given h & w in vw & vh. As z index is positive so as to stop clicks when loader is on we have to give h & w so user can't click on blocks as it lies beneath the h&w then  */
+height:100%;    /* height and width not necessary as in spinner I have given h & w in vw & vh. As z index is positive so as to stop clicks when loader is on we have to give h & w so user can't click on blocks as it lies beneath the h&w then  */
 position:absolute;
-width:80%;
+width:100%;
 z-index:1;
 background-color:white;
-opacity:0.97
+opacity:0.97;
 }
 .spinner{
-  width:calc(10vw + 20vh);
-  height:calc(10vw + 20vh);
+width:calc(10vw + 20vh);
+height:calc(10vw + 20vh);
+
 }
 .turn-selector{
   position:absolute;
@@ -149,16 +150,17 @@ opacity:0.97
 }
 .online-friends{
   box-shadow: 0px 0px 16px -8px rgba(0, 0, 0, 0.68);
-  width:20%;
   height:50%;
+  width:400px;
   z-index:1;
   position:absolute;
-  left:40%;
-  right:40%;
+  left:0;
+  right:0;
+  margin:auto;
   top:20%;
   bottom:30%;
   box-sizing: border-box;
-  
+  overflow-y:auto;
 
 }
 .close-icon{
@@ -167,3 +169,40 @@ opacity:0.97
   top:2%;
 }
 
+.in-room-modal{
+  box-shadow: 0px 0px 16px -8px rgba(0, 0, 0, 0.68);
+  width:500px;
+  height:250px;
+  z-index:1;
+  position:absolute;
+  left:0;
+  right:0;
+  margin:auto;
+  top:20%;
+  box-sizing: border-box;
+}
+.logout{
+position:absolute;
+top:28px;
+right:29px;
+font-weight: bold;
+border:2px solid rgb(201, 0, 0);
+background-color: rgb(201, 0, 0);
+color:white;
+padding:2px 10px;
+box-sizing: border-box;
+border-radius: 4px;
+cursor:pointer
+}
+@media screen and (max-width: 1074px) {
+  .logout {
+      position: absolute;
+      bottom: -15px;
+      top:auto;
+      right:auto
+      
+    }
+    .form{
+      position: relative;
+    }
+}
